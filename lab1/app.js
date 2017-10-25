@@ -1,9 +1,10 @@
 var bruteforce = require('./algorithms/bruteforce.js');
 var nearestneighbour = require('./algorithms/nearestneighbour.js');
+var genetic = require('./algorithms/genetic.js');
 
 const MAX_X = 10;
 const MAX_Y = 10;
-const NUMBER_OF_CITIES = 10;
+const NUMBER_OF_CITIES = 8;
 
 var cities = [];
 var distances = [];
@@ -57,7 +58,7 @@ startCityIndex = generateInt(0, NUMBER_OF_CITIES - 1);
 generateCities(NUMBER_OF_CITIES);
 calculateDistances();
 
-
+/*
 var bf_start = Date.now();
 bruteforce(startCityIndex, cities, distances)
 .then(function(shortestRoute) {
@@ -74,3 +75,6 @@ nearestneighbour(startCityIndex, cities, distances)
 	console.log(shortestRoute);
 	console.log('Execution time: ' + (Date.now() - nn_start) + ' ms');
 });
+*/
+
+genetic(startCityIndex, cities, distances);
