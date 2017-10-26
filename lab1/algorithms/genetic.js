@@ -90,7 +90,10 @@ var selection = function(population) {
 };
 
 var edgeCrossover = function(parent1, parent2, distances) {
-	var neighbourList, parents = [parent1, parent2], edgesList = {};
+	var neighbourList;
+	var children = {};
+	var parents = [parent1, parent2];
+	var edgesList = {};
 
 	console.log(parent1.path);
 	console.log(parent2.path);
@@ -112,11 +115,34 @@ var edgeCrossover = function(parent1, parent2, distances) {
 			edgesList[parent.path[i]] = _.cloneDeep(neighbourList);
 		}
 	});
+	
+	children.path = [];
+	children.path.push(parent1.path[0]);
+	_.map(edgesList, (value) => {
+		_.remove(value, (element) => {
+			return element === parent1.path[0];
+		});
+		return value;
+	});
+	console.log(children);
 	console.log(edgesList);
+	while(children.path.length !== parent1.path.length) {
+		var nextCity;
+		var currentCityEdges = edgesList[children[children.length - 1]];
+
+		if(currentCityEdges.length > 1) {
+
+		} else {
+			nextCity = currentCityEdges[0];
+		}
+		_.forEach(, (value) => {
+
+		});
+	}
 };
 
-var mutation = function() {
-
+var mutation = function(chromosome) {
+	
 };
 
 var generateInt = function(from, to) {
