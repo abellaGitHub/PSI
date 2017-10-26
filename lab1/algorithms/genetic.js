@@ -80,7 +80,7 @@ var selection = function(population) {
 			population[i].b = population[i - 1].b + Math.round(population[i].evaluation);
 		}
 	}
-	var randomInt, newPopulation = [];
+	var random, newPopulation = [];
 	for(var i = 0; i < population.length; i++) {
 		random = generateInt(0, 100);
 		console.log(random);
@@ -90,10 +90,7 @@ var selection = function(population) {
 };
 
 var edgeCrossover = function(parent1, parent2, distances) {
-	var neighbourList, parents = [], edgesList = {};
-
-	parents.push(parent1);
-	parents.push(parent2);
+	var neighbourList, parents = [parent1, parent2], edgesList = {};
 
 	console.log(parent1.path);
 	console.log(parent2.path);
