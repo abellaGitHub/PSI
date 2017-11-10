@@ -1,7 +1,7 @@
 var promise = require('promise');
 var _ = require('lodash');
 
-const POPULATION_SIZE = 4;
+const POPULATION_SIZE = 8;
 
 module.exports = function(startCityIndex, cities, distances) {
 
@@ -9,9 +9,16 @@ module.exports = function(startCityIndex, cities, distances) {
 	var startCity = cities[startCityIndex];
 
 	for(var i = 0; i < POPULATION_SIZE; i++) {
-		var citiesLeft = _.cloneDeep(cities);
-		_.remove(citiesLeft, function(element) { return element.name === startCity.name; });
-		population.push(generateRandomSolution(startCity, citiesLeft, distances));
+		var generatedSolution;
+		do {
+			var citiesLeft = _.cloneDeep(cities);
+			_.remove(citiesLeft, function(element) { return element.name === startCity.name; });
+			generatedSolution = generateRandomSolution(startCity, citiesLeft, distances);
+		} while(_.find(population, (element) => { 
+			return (JSON.stringify(element.path) === JSON.stringify(generatedSolution.path)) 
+					|| (JSON.stringify(element.path) === JSON.stringify(_.reverse(generatedSolution.path))); 
+		}));
+		population.push(generatedSolution);
 	};
 
 	evaluatePopulation(population);
@@ -47,24 +54,12 @@ var generateRandomSolution = function(startCity, cities, distances) {
 };
 
 var evaluatePopulation = function(population) {
-
 	var evaluationBase = 0;
-
-	_.forEach(population, (element) => { evaluationBase += element.totalDistance; });
+	_.forEach(population, (element) => { evaluationBase += (1 / element.totalDistance); });
 	_.forEach(population, (element) => {
-		element.evaluation = Math.round((element.totalDistance / evaluationBase) * 10000) / 100;
+		element.evaluation = round((1 / element.totalDistance) / evaluationBase) * 100;
 	});
 	population = _.sortBy(population, [(element) => { return element.evaluation; }]);
-
-	var temp;
-	var i = 0, j = population.length - 1;
-	while(i !== j && i < j) {
-		temp = population[i].evaluation;
-		population[i].evaluation = population[j].evaluation;
-		population[j].evaluation = temp;
-		i++;
-		j--;
-	};
 };
 
 var selection = function(population) {
@@ -126,19 +121,38 @@ var edgeCrossover = function(parent1, parent2, distances) {
 	});
 	console.log(children);
 	console.log(edgesList);
-	while(children.path.length !== parent1.path.length) {
+	while(children.path.length !== (parent1.path.length - 1)) {
 		var nextCity;
-		var currentCityEdges = edgesList[children[children.length - 1]];
+		var currentCityEdges = edgesList[children.path[children.path.length - 1]];
 
 		if(currentCityEdges.length > 1) {
+			var highest = {city: currentCityEdges[0], edges: edgesList[currentCityEdges[0]].length};
+			var lowest = {city: currentCityEdges[0], edges: edgesList[currentCityEdges[0]].length};
 
+			_.forEach(currentCityEdges, (city) => {
+				highest = (edgesList[city].length > highest.edges) ? {city: city, edges: edgesList[city].length} : highest;
+				lowest = (edgesList[city].length < lowest.edges) ? {city: city, edges: edgesList[city].length} : lowest;
+			});
+
+			// TO-DO lowest and highest can be different cities with equal number of edges, nextCity must be chosen by random in this case
+			if(lowest.city === highest.city) {
+				nextCity = currentCityEdges[generateInt(0, currentCityEdges.length - 1)];
+			} else {
+				nextCity = lowest.city;
+			}
 		} else {
 			nextCity = currentCityEdges[0];
 		}
-		_.forEach(, (value) => {
-
+		children.path.push(nextCity);
+		_.map(edgesList, (value) => {
+			_.remove(value, (element) => {
+				return element === nextCity;
+			});
+			return value;
 		});
 	}
+	children.path.push(children.path[0]);
+	console.log(children);
 };
 
 var mutation = function(chromosome) {
@@ -157,3 +171,7 @@ var getDistance = function(city1, city2, distances) {
 		return _.find(distances, {city1: city2, city2: city1}).distance;
 	}
 };
+
+var round = function(number) {
+	return Math.round(number * 100) / 100;
+}
