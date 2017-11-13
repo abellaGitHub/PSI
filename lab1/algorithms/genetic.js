@@ -1,7 +1,7 @@
 var promise = require('promise');
 var _ = require('lodash');
 
-const POPULATION_SIZE = 8;
+const POPULATION_SIZE = 4;
 
 module.exports = function(startCityIndex, cities, distances) {
 
@@ -21,16 +21,53 @@ module.exports = function(startCityIndex, cities, distances) {
 		population.push(generatedSolution);
 	};
 
-	evaluatePopulation(population);
-	population = _.sortBy(population, [(element) => { return element.totalDistance; }]);
-	var newPopulation = selection(population);
-
-	console.log('Population:');
+	console.log('FIRST POPULATION');
 	console.log(population);
-	console.log('New population:');
-	console.log(newPopulation);
 
-	edgeCrossover(newPopulation[0], newPopulation[1]);
+	while(population.length < 100) {
+		console.log('BEFORE EVAL');
+		console.log(population);
+		evaluatePopulation(population);
+		population = _.sortBy(population, [(element) => { return element.totalDistance; }]);
+		console.log('AFTER EVAL AND BEFORE SELECTION');
+		console.log(population);
+		population = selection(population);
+
+		console.log('POPULATION AFTER SELECTION');
+		console.log(population);
+
+		var populationForCrossover = _.cloneDeep(population);
+		while(populationForCrossover.length > 0) {
+			var a, b;
+			do {
+				a = generateInt(0, populationForCrossover.length - 1);
+				b = generateInt(0, populationForCrossover.length - 1);
+			} while(a === b);
+			console.log('BEFORE CROSSOVER');
+			console.log(populationForCrossover);
+			console.log(a, b);
+			population.push(edgeCrossover(populationForCrossover[a], populationForCrossover[b], distances));
+			if(a < b) {
+				populationForCrossover.splice(b, 1);
+				populationForCrossover.splice(a, 1);
+			} else {
+				populationForCrossover.splice(a, 1);
+				populationForCrossover.splice(b, 1);
+			}
+		}
+
+		console.log('POPULATION AFTER CROSSOVER');
+		console.log(population);
+
+		_.forEach(population, (element) => {
+			if(Math.random() < 0.02) {
+				mutation(element, distances);
+			}
+		});
+	}
+
+	_.sortBy(population, [(element) => { return element.totalDistance; }]);
+	console.log(population[0]);
 };
 
 var generateRandomSolution = function(startCity, cities, distances) {
@@ -75,11 +112,12 @@ var selection = function(population) {
 			population[i].b = population[i - 1].b + Math.round(population[i].evaluation);
 		}
 	}
+	console.log('IN SELECTION');
+	console.log(population);
 	var random, newPopulation = [];
 	for(var i = 0; i < population.length; i++) {
 		random = generateInt(0, 100);
-		console.log(random);
-		newPopulation.push(_.find(population, (element) => { return (element.a <= random) && (random <= element.b); }));
+		newPopulation.push(_.cloneDeep(_.find(population, (element) => { return (element.a <= random) && (random <= element.b); })));
 	}
 	return newPopulation;
 };
@@ -89,9 +127,6 @@ var edgeCrossover = function(parent1, parent2, distances) {
 	var children = {};
 	var parents = [parent1, parent2];
 	var edgesList = {};
-
-	console.log(parent1.path);
-	console.log(parent2.path);
 
 	parents.forEach((parent) => {
 		for(var i = 0; i < parent.path.length; i++) {
@@ -119,8 +154,7 @@ var edgeCrossover = function(parent1, parent2, distances) {
 		});
 		return value;
 	});
-	console.log(children);
-	console.log(edgesList);
+
 	while(children.path.length !== (parent1.path.length - 1)) {
 		var nextCity;
 		var currentCityEdges = edgesList[children.path[children.path.length - 1]];
@@ -152,11 +186,43 @@ var edgeCrossover = function(parent1, parent2, distances) {
 		});
 	}
 	children.path.push(children.path[0]);
-	console.log(children);
+	children.totalDistance = 0;
+	for(var i = 1; i < children.path.length; i++) {
+		children.totalDistance += getDistance(children.path[i - 1], children.path[i], distances);
+	}
+	return children;
 };
 
-var mutation = function(chromosome) {
-	
+var mutation = function(chromosome, distances) {
+	var a, b, temp = [];
+
+	do {
+		a = generateInt(1, chromosome.path.length - 2);
+		b = generateInt(1, chromosome.path.length - 2);
+	} while(a === b);
+
+	if(a < b) {
+		for(var i = a; i <= b; i++) {
+			temp.push(chromosome.path[i]);
+		}
+		_.reverse(temp);
+		for(var i = 0; i < temp.length; i++) {
+			chromosome.path[a + i] = temp[i];
+		}
+	} else if(a > b) {
+		for(var i = b; i <= a; i++) {
+			temp.push(chromosome.path[i]);
+		}
+		_.reverse(temp);
+		for(var i = 0; i < temp.length; i++) {
+			chromosome.path[b + i] = temp[i];
+		}		
+	}
+	chromosome.totalDistance = 0;
+	for(var i = 1; i < chromosome.path.length; i++) {
+		chromosome.totalDistance += getDistance(chromosome.path[i - 1], chromosome.path[i], distances);
+	}
+	return chromosome;
 };
 
 var generateInt = function(from, to) {
