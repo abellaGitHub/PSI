@@ -1,73 +1,75 @@
 var promise = require('promise');
 var _ = require('lodash');
 
-const POPULATION_SIZE = 4;
+const POPULATION_SIZE = 10;
 
 module.exports = function(startCityIndex, cities, distances) {
 
-	var population = [];
-	var startCity = cities[startCityIndex];
+	return new Promise((resolve, reject) => {
+		var population = [];
+		var startCity = cities[startCityIndex];
 
-	for(var i = 0; i < POPULATION_SIZE; i++) {
-		var generatedSolution;
-		do {
-			var citiesLeft = _.cloneDeep(cities);
-			_.remove(citiesLeft, function(element) { return element.name === startCity.name; });
-			generatedSolution = generateRandomSolution(startCity, citiesLeft, distances);
-		} while(_.find(population, (element) => { 
-			return (JSON.stringify(element.path) === JSON.stringify(generatedSolution.path)) 
-					|| (JSON.stringify(element.path) === JSON.stringify(_.reverse(generatedSolution.path))); 
-		}));
-		population.push(generatedSolution);
-	};
-
-	console.log('FIRST POPULATION');
-	console.log(population);
-
-	while(population.length < 100) {
-		console.log('BEFORE EVAL');
-		console.log(population);
-		evaluatePopulation(population);
-		population = _.sortBy(population, [(element) => { return element.totalDistance; }]);
-		console.log('AFTER EVAL AND BEFORE SELECTION');
-		console.log(population);
-		population = selection(population);
-
-		console.log('POPULATION AFTER SELECTION');
-		console.log(population);
-
-		var populationForCrossover = _.cloneDeep(population);
-		while(populationForCrossover.length > 0) {
-			var a, b;
+		for(var i = 0; i < POPULATION_SIZE; i++) {
+			var generatedSolution;
 			do {
-				a = generateInt(0, populationForCrossover.length - 1);
-				b = generateInt(0, populationForCrossover.length - 1);
-			} while(a === b);
-			console.log('BEFORE CROSSOVER');
-			console.log(populationForCrossover);
-			console.log(a, b);
-			population.push(edgeCrossover(populationForCrossover[a], populationForCrossover[b], distances));
-			if(a < b) {
-				populationForCrossover.splice(b, 1);
-				populationForCrossover.splice(a, 1);
-			} else {
-				populationForCrossover.splice(a, 1);
-				populationForCrossover.splice(b, 1);
+				var citiesLeft = _.cloneDeep(cities);
+				_.remove(citiesLeft, function(element) { return element.name === startCity.name; });
+				generatedSolution = generateRandomSolution(startCity, citiesLeft, distances);
+			} while(_.find(population, (element) => { 
+				return (JSON.stringify(element.path) === JSON.stringify(generatedSolution.path)) 
+						|| (JSON.stringify(element.path) === JSON.stringify(_.reverse(generatedSolution.path))); 
+			}));
+			population.push(generatedSolution);
+		};
+
+		// console.log('FIRST POPULATION');
+		// console.log(population);
+
+		while(population.length < 100) {
+			// console.log('BEFORE EVAL');
+			// console.log(population);
+			evaluatePopulation(population);
+			population = _.sortBy(population, [(element) => { return element.totalDistance; }]);
+			// console.log('AFTER EVAL AND BEFORE SELECTION');
+			// console.log(population);
+			population = selection(population);
+
+			// console.log('POPULATION AFTER SELECTION');
+			// console.log(population);
+
+			var populationForCrossover = _.cloneDeep(population);
+			while(populationForCrossover.length > 1) {
+				var a, b;
+				do {
+					a = generateInt(0, populationForCrossover.length - 1);
+					b = generateInt(0, populationForCrossover.length - 1);
+				} while(a === b);
+				// console.log('BEFORE CROSSOVER');
+				// console.log(populationForCrossover);
+				// console.log(a, b);
+				population.push(edgeCrossover(populationForCrossover[a], populationForCrossover[b], distances));
+				if(a < b) {
+					populationForCrossover.splice(b, 1);
+					populationForCrossover.splice(a, 1);
+				} else {
+					populationForCrossover.splice(a, 1);
+					populationForCrossover.splice(b, 1);
+				}
 			}
+
+			// console.log('POPULATION AFTER CROSSOVER');
+			// console.log(population);
+
+			_.forEach(population, (element) => {
+				if(Math.random() < 0.02) {
+					mutation(element, distances);
+				}
+			});
 		}
 
-		console.log('POPULATION AFTER CROSSOVER');
-		console.log(population);
-
-		_.forEach(population, (element) => {
-			if(Math.random() < 0.02) {
-				mutation(element, distances);
-			}
-		});
-	}
-
-	_.sortBy(population, [(element) => { return element.totalDistance; }]);
-	console.log(population[0]);
+		population = _.sortBy(population, [(element) => { return element.totalDistance; }]);
+		resolve({ path: population[0].path, totalDistance: population[0].totalDistance });
+	});
 };
 
 var generateRandomSolution = function(startCity, cities, distances) {
@@ -112,8 +114,8 @@ var selection = function(population) {
 			population[i].b = population[i - 1].b + Math.round(population[i].evaluation);
 		}
 	}
-	console.log('IN SELECTION');
-	console.log(population);
+	// console.log('IN SELECTION');
+	// console.log(population);
 	var random, newPopulation = [];
 	for(var i = 0; i < population.length; i++) {
 		random = generateInt(0, 100);

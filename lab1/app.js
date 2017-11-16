@@ -4,7 +4,7 @@ var genetic = require('./algorithms/genetic.js');
 
 const MAX_X = 10;
 const MAX_Y = 10;
-const NUMBER_OF_CITIES = 8;
+const NUMBER_OF_CITIES = 9;
 
 var cities = [];
 var distances = [];
@@ -58,23 +58,26 @@ startCityIndex = generateInt(0, NUMBER_OF_CITIES - 1);
 generateCities(NUMBER_OF_CITIES);
 calculateDistances();
 
-/*
 var bf_start = Date.now();
 bruteforce(startCityIndex, cities, distances)
 .then(function(shortestRoute) {
 	console.log('BruteForce result:');
 	console.log(shortestRoute);
-	console.log('Execution time: ' + (Date.now() - bf_start) + ' ms');
+	console.log('Execution time: ' + (Date.now() - bf_start) + ' ms\n');
 });
-
 
 var nn_start = Date.now();
 nearestneighbour(startCityIndex, cities, distances)
 .then(function(shortestRoute) {
 	console.log('NearestNeighbour result:');
 	console.log(shortestRoute);
-	console.log('Execution time: ' + (Date.now() - nn_start) + ' ms');
+	console.log('Execution time: ' + (Date.now() - nn_start) + ' ms\n');
 });
-*/
 
-genetic(startCityIndex, cities, distances);
+var gen_start = Date.now();
+genetic(startCityIndex, cities, distances)
+.then((shortestRoute) => {
+	console.log('Genetic result:');
+	console.log(shortestRoute);
+	console.log('Execution time: ' + (Date.now() - gen_start) + ' ms\n');
+});
